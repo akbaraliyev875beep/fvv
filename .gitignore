@@ -1,0 +1,25 @@
+# Ma'lumotlar bazasi va SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Python va muhit fayllari
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Maxfiy fayllar
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Docker
+.DS_Store

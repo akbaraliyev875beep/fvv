@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dispetcher Markazi - {{ app_name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { dark: '#0F172A', sidebar: '#1E293B', primary: '#EF4444' } } }
+        }
+    </script>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-dark text-white font-['Inter'] h-screen overflow-hidden flex flex-col">
+
+    <!-- Header -->
+    <header class="h-16 border-b border-white/5 glass-nav flex items-center justify-between px-6 z-30 shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.4)]">
+                <i class="fa-solid fa-headset text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold tracking-wide">Dispetcher Markazi</h1>
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span class="text-green-400 font-medium">Tizimga ulangan</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-6 items-center">
+            <div class="flex gap-4">
+                <div class="text-center">
+                    <div class="text-xl font-bold text-white" id="statActive">0</div>
+                    <div class="text-[10px] text-gray-400 uppercase tracking-wider">Faol chaqiruv</div>
+                </div>
+                <div class="w-px h-8 bg-white/10 self-center"></div>
+                <div class="text-center">
+                    <div class="text-xl font-bold text-white" id="statBrigades">0</div>
+                    <div class="text-[10px] text-gray-400 uppercase tracking-wider">Bo'sh brigada</div>
+                </div>
+            </div>
+            <a href="/admin" class="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-colors border border-white/10">
+                <i class="fa-solid fa-gear mr-2"></i> Boshqaruv
+            </a>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden relative">
+        <!-- Sidebar -->
+        <aside class="w-[400px] bg-sidebar/80 backdrop-blur-xl border-r border-white/5 flex flex-col z-20 shadow-2xl shrink-0">
+            <div class="p-4 border-b border-white/5">
+                <div class="flex gap-2 mb-3">
+                    <button class="flex-1 py-2 bg-blue-600 rounded-lg text-sm font-medium text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]">Barchasi</button>
+                    <button class="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium text-gray-300 transition-colors">Kutmoqda</button>
+                </div>
+                <!-- Service Filters -->
+                <div id="serviceFilters" class="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
+                    <button class="px-3 py-1.5 bg-white/10 text-white rounded-md text-xs font-medium shrink-0" data-service="">Hammasi</button>
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Calls List -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-3" id="callsList">
+                <div class="text-center text-gray-500 py-10">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p>Chaqiruvlar yuklanmoqda...</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Map Area -->
+        <main class="flex-1 relative bg-black">
+            <div id="map" class="w-full h-full z-0"></div>
+            
+            <!-- Assignment Panel (Hidden by default) -->
+            <div id="assignmentPanel" class="absolute bottom-6 left-1/2 -translate-x-1/2 glass-card p-6 rounded-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] w-[650px] z-20 hidden transform transition-all duration-300 translate-y-10 opacity-0 scale-95">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-white mb-1">Brigada tayinlash</h2>
+                        <p class="text-xs text-gray-400 font-mono" id="assignCallId">Call: ...</p>
+                    </div>
+                    <button onclick="closeAssignmentPanel()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                
+                <!-- AI Insights -->
+                <div class="mb-5 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl hidden" id="aiInsights">
+                    <div class="flex items-center gap-2 text-red-400 font-bold mb-2">
+                        <i class="fa-solid fa-robot"></i> AI Tahlili
+                    </div>
+                    <p class="text-sm text-gray-300 leading-relaxed" id="aiReasoning">...</p>
+                </div>
+
+                <!-- Multi-service info -->
+                <div class="mb-5 p-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl hidden" id="multiServiceInfo">
+                    <div class="flex items-center gap-2 text-purple-400 font-bold mb-2">
+                        <i class="fa-solid fa-layer-group"></i> Koordinatsiya
+                    </div>
+                    <p class="text-sm text-gray-300">Ushbu chaqiruv boshqa xizmatlarga ham yuborilgan.</p>
+                </div>
+
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Eng yaqin bo'sh brigadalar</h3>
+                    <div class="text-xs text-blue-400"><i class="fa-solid fa-location-crosshairs mr-1"></i> 50km radius</div>
+                </div>
+
+                <div class="space-y-2 max-h-56 overflow-y-auto pr-2 custom-scrollbar" id="brigadesList">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform transition-all duration-500 translate-y-[150%] opacity-0 w-80">
+        <div class="glass-card p-4 rounded-2xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex items-start gap-4">
+            <div class="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5" id="toastIcon">
+                <i class="fa-solid fa-bell"></i>
+            </div>
+            <div class="flex-1">
+                <h4 class="text-sm font-bold text-white mb-0.5" id="toastTitle">Sarlavha</h4>
+                <p class="text-xs text-gray-400 leading-snug" id="toastDesc">Xabar matni</p>
+            </div>
+            <button onclick="hideToast()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </div>
+
+    <!-- Templates -->
+    <template id="callCardTemplate">
+        <div class="bg-dark/60 border border-white/5 hover:border-white/20 rounded-2xl p-4 transition-all cursor-pointer group call-card relative overflow-hidden">
+            <div class="pulse-bg absolute inset-0 bg-red-500/5 hidden pointer-events-none"></div>
+            
+            <div class="flex justify-between items-start mb-3 relative z-10">
+                <div class="flex gap-2">
+                    <span class="status-badge">PENDING</span>
+                    <span class="service-badge px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-gray-700 text-gray-300 hidden">Umumiy</span>
+                </div>
+                <span class="text-[10px] text-gray-500 font-mono time-ago">0m oldin</span>
+            </div>
+            
+            <h3 class="font-bold text-white text-base mb-1 patient-name truncate">Ism familiya</h3>
+            <p class="text-xs text-gray-400 mb-3 description line-clamp-2 leading-relaxed">Izoh</p>
+            
+            <div class="flex items-center gap-2 relative z-10">
+                <span class="risk-badge px-2.5 py-1 rounded-md text-[10px] font-bold border hidden tracking-wider">RISK</span>
+            </div>
+        </div>
+    </template>
+
+    <template id="brigadeRowTemplate">
+        <div class="flex items-center justify-between p-3.5 bg-dark/40 border border-white/5 rounded-xl hover:bg-dark/80 transition-colors">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
+                    <i class="fa-solid fa-truck-medical text-lg"></i>
+                </div>
+                <div>
+                    <p class="font-bold text-sm text-white vehicle-num">01A123BC</p>
+                    <p class="text-xs text-gray-400 distance flex items-center gap-1 mt-0.5"><i class="fa-solid fa-route text-[10px]"></i> 2.4 km</p>
+                </div>
+            </div>
+            <button class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white rounded-lg transition-colors shadow-[0_0_15px_rgba(37,99,235,0.4)] assign-btn">Tayinlash</button>
+        </div>
+    </template>
+
+    <!-- JS is loaded locally -->
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

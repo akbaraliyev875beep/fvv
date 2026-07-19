@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: tez-yordam-api
+    env: docker
+    dockerfilePath: ./Dockerfile.render
+    plan: free
+    region: frankfurt # Yevropa (O'zbekiston uchun nisbatan tezroq)
+    healthCheckPath: /api/v1/health # Yoki asosiy sahifa / bo'lishi ham mumkin
+    envVars:
+      - key: APP_NAME
+        value: "Tez Yordam EMS (Online)"
+      - key: DEBUG
+        value: "false"
+      - key: ALLOWED_ORIGINS
+        value: "*" # Boshlang'ich qadamda hamma ulanishi uchun
+      # DIQQAT: Qolgan barcha maxfiy kalitlar (.env da joylashgan narsalar, misol uchun DATABASE_URL, REDIS_URL) 
+      # Render.com dagi "Environment" bo'limida qo'lda kiritilishi kerak!
