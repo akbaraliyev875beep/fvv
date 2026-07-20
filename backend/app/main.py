@@ -31,10 +31,11 @@ logger = logging.getLogger("tez_yordam")
 
 # ── Yo'llar ──────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent  # → project root (/app)
+# 34‑38‑qatorlarni almashtiring
+BASE_DIR = Path(__file__).resolve().parent.parent  # → /app
 FRONTEND_DIR = BASE_DIR / "frontend"
 TEMPLATES_DIR = FRONTEND_DIR / "templates"
-STATIC_DIR = FRONTEND_DIR / "static"
-
+STATIC_DIR = Path("/app/frontend/static")   # <-- bu qatorda aniq yo‘l
 
 # ── Lifespan (startup / shutdown) ────────────────────────────────
 @asynccontextmanager
