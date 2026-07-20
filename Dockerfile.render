@@ -24,6 +24,7 @@ COPY backend /app
 
 # Frontend kodini nusxalash (FastAPI uning shablonlarini Render'da ishlatishi uchun)
 COPY frontend /app/frontend
+COPY frontend/static /app/frontend/static
 
 EXPOSE 8000
 
