@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger("tez_yordam")
 
 # ── Yo'llar ──────────────────────────────────────────────────────
-BASE_DIR = Path(__file__).resolve().parent.parent.parent  # → tez-yordam-ems/
+BASE_DIR = Path(__file__).resolve().parent.parent  # → project root (/app)
 FRONTEND_DIR = BASE_DIR / "frontend"
 TEMPLATES_DIR = FRONTEND_DIR / "templates"
 STATIC_DIR = FRONTEND_DIR / "static"
