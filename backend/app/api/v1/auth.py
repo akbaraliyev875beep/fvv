@@ -8,7 +8,7 @@ Local demo uchun mock OneID.
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Form, Body
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,6 +19,7 @@ from app.core.dependencies import CurrentUser, DbSession
 from app.core.security import (
     create_access_token,
     create_refresh_token,
+    create_device_token,
     decode_token,
     encrypt_value,
 )
@@ -83,17 +84,72 @@ async def oneid_callback(
     else:
         logger.info(f"Mavjud foydalanuvchi kirdi: {user.id}")
 
-    # JWT yaratish
+    # JWT va Device token yaratish
     access = create_access_token({"sub": str(user.id), "role": user.role.value})
+    device_token = create_device_token({"sub": str(user.id), "role": user.role.value})
 
     # HTML orqali token'ni localStorage'ga saqlash va redirect
     html = f"""
     <html><body><script>
         localStorage.setItem('access_token', '{access}');
+        localStorage.setItem('device_token', '{device_token}');
         window.location.href = '/';
     </script></body></html>
     """
     return HTMLResponse(content=html)
+
+
+@router.post("/trusted-device/register")
+async def register_trusted_device(
+    current_user: CurrentUser,
+    device_name: str = Body(default="Mening Qurilmam", embed=True),
+):
+    """Joriy foydalanuvchining qurilmasini ishonchli deb ro'yxatga olish (1 yillik token berish)."""
+    access = create_access_token({"sub": str(current_user.id), "role": current_user.role.value})
+    device_token = create_device_token({"sub": str(current_user.id), "role": current_user.role.value}, device_name=device_name)
+    return {
+        "access_token": access,
+        "device_token": device_token,
+        "message": f"'{device_name}' ishonchli qurilma sifatida ro'yxatga kiritildi."
+    }
+
+
+@router.post("/trusted-device/login")
+async def trusted_device_login(
+    db: DbSession,
+    device_token: str = Body(..., embed=True),
+):
+    """Ishonchli qurilma tokeni orqali qayta parol so'ramasdan avtomatik kirish."""
+    payload = decode_token(device_token)
+    if not payload or payload.get("type") != "trusted_device":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Ishonchli qurilma tokeni yaroqsiz yoki muddati o'tgan"
+        )
+    
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token foydalanuvchisi topilmadi")
+    
+    import uuid
+    try:
+        uid = uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Noto'g'ri UUID formati")
+
+    result = await db.execute(select(User).where(User.id == uid))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Foydalanuvchi topilmadi")
+
+    new_access = create_access_token({"sub": str(user.id), "role": user.role.value})
+    new_device_token = create_device_token({"sub": str(user.id), "role": user.role.value})
+
+    return {
+        "access_token": new_access,
+        "device_token": new_device_token,
+        "user": UserRead.model_validate(user)
+    }
 
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -101,8 +157,7 @@ async def refresh_access_token(
     request: Request,
     db: DbSession,
 ):
-    """Access token'ni refresh token orqali yangilash (local — Redis'siz)."""
-    # Demo uchun oddiy qayta-token berish
+    """Access token'ni refresh token orqali yangilash."""
     return {"detail": "Refresh token local demo'da ishlamaydi. Qayta login qiling."}
 
 
@@ -164,7 +219,8 @@ async def admin_login(
 
     access = create_access_token({"sub": str(admin_user.id), "role": admin_user.role.value})
     refresh = create_refresh_token({"sub": str(admin_user.id)})
-    return {"access_token": access, "refresh_token": refresh}
+    device = create_device_token({"sub": str(admin_user.id), "role": admin_user.role.value})
+    return {"access_token": access, "refresh_token": refresh, "device_token": device}
 
 # Admin dashboard placeholder (GET) – protected by AdminUser
 @router.get("/admin/dashboard", response_class=HTMLResponse, dependencies=[Depends(AdminUser)])

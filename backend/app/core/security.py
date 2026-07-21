@@ -62,6 +62,19 @@ def create_refresh_token(data: dict) -> str:
     return jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
+def create_device_token(data: dict, device_name: str = "trusted_device") -> str:
+    """Ishonchli qurilma uchun uzoq muddatli token yaratish (1 yil / 365 kun)."""
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(days=365)
+    to_encode.update({
+        "exp": expire,
+        "type": "trusted_device",
+        "device_name": device_name,
+        "jti": secrets.token_urlsafe(32),
+    })
+    return jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+
+
 def decode_token(token: str) -> dict | None:
     """JWT tokenni dekodlash va tekshirish."""
     try:

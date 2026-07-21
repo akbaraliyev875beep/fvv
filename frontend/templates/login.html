@@ -90,6 +90,9 @@
                 if (res.ok) {
                     const data = await res.json();
                     localStorage.setItem('access_token', data.access_token);
+                    if (data.device_token) {
+                        localStorage.setItem('device_token', data.device_token);
+                    }
                     window.location.href = '/admin';
                 } else {
                     const err = await res.json();
@@ -99,6 +102,28 @@
             } catch (err) {
                 errorDiv.textContent = 'Server bilan aloqa yo\'q';
                 errorDiv.classList.remove('hidden');
+            }
+        });
+
+        // Ishonchli qurilma orqali avtomatik profilga kirish
+        window.addEventListener('DOMContentLoaded', async () => {
+            const deviceToken = localStorage.getItem('device_token');
+            if (deviceToken && !localStorage.getItem('access_token')) {
+                try {
+                    const res = await fetch('/api/v1/auth/trusted-device/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ device_token: deviceToken })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        localStorage.setItem('access_token', data.access_token);
+                        if (data.device_token) localStorage.setItem('device_token', data.device_token);
+                        window.location.href = data.user.role === 'admin' ? '/admin' : '/';
+                    }
+                } catch (e) {
+                    console.error("Auto device login error:", e);
+                }
             }
         });
     </script>
