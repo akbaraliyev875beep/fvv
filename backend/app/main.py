@@ -62,7 +62,22 @@ async def lifespan(app: FastAPI):
             b1 = Brigade(vehicle_number="01A111AA", status=BrigadeStatus.AVAILABLE, latitude=41.3111, longitude=69.2401)
             b2 = Brigade(vehicle_number="01B222BB", status=BrigadeStatus.AVAILABLE, latitude=41.2995, longitude=69.2801)
             db.add_all([b1, b2])
-            await db.commit()
+
+        # ServiceType seeding if empty
+        from app.models.service_type import ServiceType
+        import uuid
+        st_res = await db.execute(select(ServiceType))
+        if not st_res.scalars().all():
+            services = [
+                ServiceType(id=uuid.uuid4(), code="fire", name_uz="O't o'chirish", name_ru="Пожарная служба", phone_number="101", color_hex="#F97316", icon="fa-solid fa-fire-extinguisher", is_active=True),
+                ServiceType(id=uuid.uuid4(), code="police", name_uz="Militsiya", name_ru="Милиция", phone_number="102", color_hex="#3B82F6", icon="fa-solid fa-building-shield", is_active=True),
+                ServiceType(id=uuid.uuid4(), code="ambulance", name_uz="Tez Yordam", name_ru="Скорая Помощь", phone_number="103", color_hex="#EF4444", icon="fa-solid fa-truck-medical", is_active=True),
+                ServiceType(id=uuid.uuid4(), code="gas", name_uz="Gaz xizmati", name_ru="Служба газа", phone_number="104", color_hex="#8B5CF6", icon="fa-solid fa-fire-flame-simple", is_active=True),
+                ServiceType(id=uuid.uuid4(), code="fvv", name_uz="FVV (112)", name_ru="МЧС", phone_number="112", color_hex="#EAB308", icon="fa-solid fa-shield-halved", is_active=True),
+            ]
+            db.add_all(services)
+        
+        await db.commit()
 
     yield
 

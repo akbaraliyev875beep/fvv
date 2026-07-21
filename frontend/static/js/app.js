@@ -77,13 +77,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Fetch and render services
+    const defaultServicesList = [
+        { code: "fire", name_uz: "O't o'chirish", phone_number: "101", color_hex: "#F97316", icon: "fa-solid fa-fire-extinguisher" },
+        { code: "police", name_uz: "Militsiya", phone_number: "102", color_hex: "#3B82F6", icon: "fa-solid fa-building-shield" },
+        { code: "ambulance", name_uz: "Tez Yordam", phone_number: "103", color_hex: "#EF4444", icon: "fa-solid fa-truck-medical" },
+        { code: "gas", name_uz: "Gaz xizmati", phone_number: "104", color_hex: "#8B5CF6", icon: "fa-solid fa-fire-flame-simple" },
+        { code: "fvv", name_uz: "FVV (112)", phone_number: "112", color_hex: "#EAB308", icon: "fa-solid fa-shield-halved" }
+    ];
+
     async function loadServices() {
         if (!servicesContainer) return;
+        renderServices(defaultServicesList); // Default fallback rendered immediately!
         try {
             const res = await fetch('/api/v1/services/');
             if (res.ok) {
                 const services = await res.json();
-                renderServices(services);
+                if (Array.isArray(services) && services.length > 0) {
+                    renderServices(services);
+                }
             }
         } catch (e) {
             console.error("Xizmatlarni yuklashda xatolik:", e);
