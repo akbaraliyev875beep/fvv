@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chaqiruv Holati - {{ app_name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: { colors: { primary: '#EF4444', dark: '#0F172A' } }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-dark text-white font-['Inter'] min-h-screen flex flex-col items-center p-4 md:p-8 relative">
+    
+    <div class="fixed inset-0 z-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 pointer-events-none"></div>
+
+    <!-- Header -->
+    <header class="w-full max-w-4xl flex justify-between items-center mb-8 z-10">
+        <a href="/" class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Asosiyga qaytish</span>
+        </a>
+        <div class="text-sm text-gray-500 font-mono">ID: {{ call_id[:8] }}...</div>
+    </header>
+
+    <div class="w-full max-w-4xl grid md:grid-cols-2 gap-8 z-10">
+        
+        <!-- Left: Status & Details -->
+        <div class="glass-card rounded-3xl p-8 border border-white/10 flex flex-col">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold">Chaqiruv holati</h2>
+                <div id="statusBadge" class="status-badge status-pending">PENDING</div>
+            </div>
+
+            <!-- Status Timeline -->
+            <div class="relative pl-6 border-l-2 border-white/10 text-left space-y-8 mb-8 flex-grow" id="timeline">
+                
+                <div class="relative transition-all duration-500" id="step-pending">
+                    <div class="absolute -left-[35px] w-4 h-4 bg-gray-600 rounded-full z-10 step-dot transition-colors"></div>
+                    <h3 class="font-bold text-white text-lg">Qabul qilindi</h3>
+                    <p class="text-sm text-gray-400 mt-1">Dispetcher xabardor qilingan, brigada izlanmoqda...</p>
+                </div>
+
+                <div class="relative opacity-40 transition-all duration-500" id="step-assigned">
+                    <div class="absolute -left-[35px] w-4 h-4 bg-gray-600 rounded-full z-10 step-dot transition-colors"></div>
+                    <h3 class="font-bold text-white text-lg">Brigada tayinlandi</h3>
+                    <p class="text-sm text-gray-400 mt-1" id="brigadeInfo">Kutish...</p>
+                </div>
+
+                <div class="relative opacity-40 transition-all duration-500" id="step-en_route">
+                    <div class="absolute -left-[35px] w-4 h-4 bg-gray-600 rounded-full z-10 step-dot transition-colors"></div>
+                    <h3 class="font-bold text-white text-lg">Yo'lga chiqdi</h3>
+                    <p class="text-sm text-gray-400 mt-1">Avtomobil siz tomonga harakatlanmoqda</p>
+                </div>
+
+                <div class="relative opacity-40 transition-all duration-500" id="step-arrived">
+                    <div class="absolute -left-[35px] w-4 h-4 bg-gray-600 rounded-full z-10 step-dot transition-colors"></div>
+                    <h3 class="font-bold text-white text-lg">Yetib keldik</h3>
+                    <p class="text-sm text-gray-400 mt-1">Brigada sizning manzilingizda</p>
+                </div>
+            </div>
+
+            <button id="cancelBtn" onclick="cancelCall()" class="w-full py-3.5 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-xl border border-red-500/20 transition-all font-medium mt-4">
+                <i class="fa-solid fa-xmark mr-2"></i> Chaqiruvni bekor qilish
+            </button>
+        </div>
+
+        <!-- Right: Map -->
+        <div class="glass-card rounded-3xl p-2 border border-white/10 h-[500px] flex flex-col relative overflow-hidden">
+            <div id="map" class="w-full h-full rounded-2xl z-0"></div>
+            
+            <!-- Brigade Floating Card (Hidden initially) -->
+            <div id="brigadeCard" class="absolute bottom-6 left-6 right-6 glass-panel rounded-2xl p-4 border border-white/20 shadow-2xl flex items-center gap-4 hidden translate-y-10 transition-transform duration-500 z-20">
+                <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center text-white text-xl shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                    <i class="fa-solid fa-truck-medical"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Sizning brigadangiz</p>
+                    <h4 class="font-bold text-lg" id="bVehicle">--</h4>
+                </div>
+                <div class="ml-auto text-right">
+                    <p class="text-xs text-gray-400 mb-1">Masofa</p>
+                    <p class="font-bold text-blue-400" id="bDist">Aniqlanmoqda...</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Cancellation Modal -->
+    <div id="cancelModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div class="glass-card p-8 rounded-3xl max-w-sm w-full mx-4 border border-white/10 text-center transform scale-95 transition-transform duration-300" id="cancelModalContent">
+            <div class="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Bekor qilasizmi?</h3>
+            <p class="text-gray-400 text-sm mb-6">Haqiqatan ham ushbu favqulodda chaqiruvni bekor qilasizmi?</p>
+            <div class="flex gap-3">
+                <button onclick="closeCancelModal()" class="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors font-medium">Yo'q</button>
+                <button onclick="confirmCancel()" class="flex-1 py-3 bg-red-600 hover:bg-red-500 rounded-xl transition-colors font-medium shadow-[0_0_15px_rgba(220,38,38,0.4)]">Ha, bekor qilish</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const callId = "{{ call_id }}";
+        const steps = ['pending', 'assigned', 'en_route', 'arrived', 'completed'];
+        let currentStatus = 'pending';
+        
+        // Setup Map
+        const map = L.map('map', { zoomControl: false }).setView([41.2995, 69.2401], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        
+        const patientIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div class="w-5 h-5 bg-red-500 rounded-full border-2 border-white shadow-[0_0_15px_rgba(239,68,68,0.8)] marker-pulse flex items-center justify-center"></div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+
+        const brigadeIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div class="w-8 h-8 bg-blue-600 rounded-lg border-2 border-white shadow-lg flex items-center justify-center rotate-45"><i class="fa-solid fa-truck-medical text-white text-[12px] -rotate-45"></i></div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+        });
+
+        let pMarker = null;
+        let bMarker = null;
+
+        function updateTimeline(status, brigadeVehicle = null) {
+            currentStatus = status;
+            
+            // Update badge
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = status.toUpperCase();
+            badge.className = `status-badge status-${status}`;
+
+            if (status === 'cancelled') {
+                document.getElementById('timeline').innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fa-solid fa-ban text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-red-400 mb-2">Chaqiruv bekor qilindi</h3>
+                    </div>
+                `;
+                document.getElementById('cancelBtn').style.display = 'none';
+                return;
+            }
+            if (status === 'completed') {
+                document.getElementById('timeline').innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fa-solid fa-check text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-green-400 mb-2">Chaqiruv yakunlandi</h3>
+                        <p class="text-sm text-gray-400">Tez yordam xizmatidan foydalanganingiz uchun rahmat.</p>
+                    </div>
+                `;
+                document.getElementById('cancelBtn').style.display = 'none';
+                return;
+            }
+
+            const currentIndex = steps.indexOf(status);
+            if (currentIndex === -1) return;
+
+            steps.forEach((step, idx) => {
+                const el = document.getElementById(`step-${step}`);
+                if (!el) return;
+                
+                const dot = el.querySelector('.step-dot, .bg-blue-500, .bg-green-500');
+                if(!dot) return;
+                
+                if (idx < currentIndex) {
+                    // Past step
+                    el.classList.remove('opacity-40');
+                    dot.className = 'absolute -left-[35px] w-4 h-4 bg-green-500 rounded-full z-10 transition-colors shadow-[0_0_10px_rgba(34,197,94,0.5)]';
+                    dot.innerHTML = '<i class="fa-solid fa-check text-[10px] absolute top-[3px] left-[3px] text-white"></i>';
+                } else if (idx === currentIndex) {
+                    // Current step
+                    el.classList.remove('opacity-40');
+                    dot.className = 'absolute -left-[35px] w-4 h-4 bg-blue-500 rounded-full z-10 animate-pulse shadow-[0_0_15px_rgba(59,130,246,0.8)]';
+                    dot.innerHTML = '';
+                    
+                    if ((step === 'assigned' || step === 'en_route') && brigadeVehicle) {
+                        document.getElementById('brigadeInfo').textContent = `Avtomobil: ${brigadeVehicle}`;
+                        showBrigadeCard(brigadeVehicle);
+                    }
+                } else {
+                    // Future step
+                    el.classList.add('opacity-40');
+                    dot.className = 'absolute -left-[35px] w-4 h-4 bg-gray-600 rounded-full z-10 step-dot transition-colors';
+                    dot.innerHTML = '';
+                }
+            });
+            
+            // Disable cancel button if arrived or later
+            if (currentIndex >= 3) {
+                document.getElementById('cancelBtn').style.display = 'none';
+            }
+        }
+
+        function showBrigadeCard(vehicle) {
+            const card = document.getElementById('brigadeCard');
+            document.getElementById('bVehicle').textContent = vehicle;
+            card.classList.remove('hidden');
+            setTimeout(() => card.classList.remove('translate-y-10'), 50);
+        }
+
+        // Fetch initial data
+        async function fetchInitialData() {
+            try {
+                const token = localStorage.getItem('access_token');
+                if(!token) window.location.href='/login';
+                
+                const res = await fetch(`/api/v1/emergency/${callId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    updateTimeline(data.status, data.brigade_vehicle);
+                    
+                    if (data.latitude && data.longitude) {
+                        const latlng = [data.latitude, data.longitude];
+                        map.setView(latlng, 15);
+                        pMarker = L.marker(latlng, {icon: patientIcon}).addTo(map);
+                    }
+                    
+                    // If we had brigade lat/lng we would show it here, but read schema doesn't have it.
+                    // Real-time updates will provide it.
+                } else {
+                    if(res.status === 401) window.location.href='/login';
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        fetchInitialData();
+
+        // WebSocket for live updates
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const token = localStorage.getItem('access_token');
+        const ws = new WebSocket(`${protocol}//${window.location.host}/ws/patient/${callId}?token=${token}`);
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'status_update') {
+                updateTimeline(data.new_status, data.brigade_vehicle || document.getElementById('bVehicle').textContent);
+            } else if (data.type === 'brigade_assigned') {
+                updateTimeline(data.status, data.brigade_vehicle);
+            } else if (data.type === 'brigade_location') {
+                // Not standard yet, but if brigade location is sent to patient
+                const latlng = [data.latitude, data.longitude];
+                if (!bMarker) {
+                    bMarker = L.marker(latlng, { icon: brigadeIcon }).addTo(map);
+                } else {
+                    bMarker.setLatLng(latlng);
+                }
+                
+                // Calculate distance if pMarker exists
+                if(pMarker) {
+                    const dist = map.distance(pMarker.getLatLng(), latlng);
+                    document.getElementById('bDist').textContent = `${(dist/1000).toFixed(1)} km`;
+                    
+                    // Fit bounds
+                    const bounds = L.latLngBounds([pMarker.getLatLng(), latlng]);
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
+            }
+        };
+
+        // --- Cancellation logic ---
+        function cancelCall() {
+            document.getElementById('cancelModal').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('cancelModal').classList.remove('opacity-0');
+                document.getElementById('cancelModalContent').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeCancelModal() {
+            document.getElementById('cancelModal').classList.add('opacity-0');
+            document.getElementById('cancelModalContent').classList.add('scale-95');
+            setTimeout(() => {
+                document.getElementById('cancelModal').classList.add('hidden');
+            }, 300);
+        }
+
+        async function confirmCancel() {
+            try {
+                const res = await fetch(`/api/v1/emergency/${callId}/cancel`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    closeCancelModal();
+                    updateTimeline('cancelled');
+                } else {
+                    alert("Xatolik yuz berdi");
+                    closeCancelModal();
+                }
+            } catch(e) {
+                alert("Xatolik yuz berdi");
+                closeCancelModal();
+            }
+        }
+    </script>
+</body>
+</html>

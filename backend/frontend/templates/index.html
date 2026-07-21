@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ app_name }} - Favqulodda Yordam</title>
+    <meta name="description" content="O'zbekiston hududida favqulodda tibbiy yordam tizimi. Bir tugma orqali tez yordam chaqirish.">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#EF4444',
+                        secondary: '#1E293B',
+                        dark: '#0F172A',
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-dark text-white font-['Inter'] antialiased min-h-screen flex flex-col relative overflow-x-hidden">
+    <!-- Background Elements -->
+    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]"></div>
+        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="relative z-50 px-6 py-4 flex justify-between items-center glass-nav sticky top-0">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.5)]">
+                <i class="fa-solid fa-truck-medical text-xl text-white"></i>
+            </div>
+            <h1 class="text-xl font-bold tracking-wide hidden sm:block">{{ app_name }}</h1>
+        </div>
+        
+        <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
+            <a href="#how-it-works" class="hover:text-white transition-colors">Qanday ishlaydi</a>
+            <a href="#features" class="hover:text-white transition-colors">Imkoniyatlar</a>
+        </nav>
+
+        <div id="authContainer">
+            <!-- Will be populated by JS based on login status -->
+            <a href="/login" class="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all duration-300 font-medium text-sm">
+                <i class="fa-regular fa-user"></i>
+                <span>Kirish</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="relative z-10 flex-grow flex flex-col">
+        
+        <!-- Hero Section -->
+        <section class="min-h-[85vh] flex flex-col items-center justify-center p-6 text-center fade-in">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium mb-8">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                24/7 Shoshilinch Yordam
+            </div>
+            
+            <h2 class="text-4xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-500 leading-tight">
+                Hayot qutqaruvchi <br/> bir tugma masofasida
+            </h2>
+            <p class="text-gray-400 text-lg max-w-2xl mx-auto mb-16 leading-relaxed">
+                Tizim avtomatik ravishda joylashuvingizni aniqlaydi va sizga eng yaqin tez yordam brigadasini yuboradi. Kutish vaqtini qisqartiring.
+            </p>
+
+            <!-- Specific Services -->
+            <div id="servicesContainer" class="flex flex-wrap justify-center gap-3 md:gap-4 mb-10 w-full max-w-3xl mx-auto">
+                <!-- Services will be populated here via JS -->
+            </div>
+
+            <!-- SOS Button Area -->
+            <div class="relative group cursor-pointer animate-float mt-4" id="sosContainer">
+                <div class="absolute inset-0 bg-primary rounded-full animate-ping-slow opacity-30 group-hover:opacity-50 transition-opacity pointer-events-none"></div>
+                <div class="absolute inset-[-20px] bg-primary/20 rounded-full blur-xl group-hover:bg-primary/30 transition-all duration-500 pointer-events-none"></div>
+                
+                <button id="sosBtn" class="relative w-40 h-40 md:w-48 md:h-48 bg-gradient-to-b from-red-500 to-red-700 rounded-full shadow-[0_10px_40px_rgba(239,68,68,0.6)] border-4 border-red-400/50 flex flex-col items-center justify-center transform transition-all duration-300 hover:scale-105 active:scale-95 group-hover:shadow-[0_15px_50px_rgba(239,68,68,0.8)] z-10 overflow-hidden" data-service="">
+                    <i class="fa-solid fa-phone-volume text-4xl md:text-5xl text-white mb-2 drop-shadow-lg"></i>
+                    <span class="text-2xl md:text-3xl font-black tracking-widest text-white drop-shadow-md">SOS</span>
+                    <span class="text-xs font-medium text-white/80 mt-1 uppercase tracking-wider">Umumiy</span>
+                </button>
+            </div>
+
+            <div class="mt-12 w-full max-w-md mx-auto">
+                <button id="recordBtn" class="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-2xl glass-panel hover:bg-white/10 transition-all text-gray-300 hover:text-white font-medium group">
+                    <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+                        <i class="fa-solid fa-microphone"></i>
+                    </div>
+                    <span>Ovozli shikoyat qoldirish (ixtiyoriy)</span>
+                </button>
+                <div id="recordingStatus" class="hidden mt-4 text-sm text-primary animate-pulse flex items-center justify-center gap-2 font-medium">
+                    <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                    Yozilmoqda... Qayta bosib to'xtating
+                </div>
+            </div>
+            
+            <div id="statusMessage" class="mt-6 text-sm font-medium opacity-0 transition-opacity duration-300"></div>
+        </section>
+
+        <!-- Stats Section -->
+        <section class="border-y border-white/5 bg-black/20 py-12">
+            <div class="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-white/5">
+                <div class="text-center px-4">
+                    <div class="text-3xl md:text-4xl font-bold text-white mb-2">~5 daq</div>
+                    <div class="text-sm text-gray-400 font-medium uppercase tracking-wider">O'rtacha javob</div>
+                </div>
+                <div class="text-center px-4">
+                    <div class="text-3xl md:text-4xl font-bold text-white mb-2">24/7</div>
+                    <div class="text-sm text-gray-400 font-medium uppercase tracking-wider">Ish vaqti</div>
+                </div>
+                <div class="text-center px-4">
+                    <div class="text-3xl md:text-4xl font-bold text-white mb-2">98%</div>
+                    <div class="text-sm text-gray-400 font-medium uppercase tracking-wider">Aniqlik</div>
+                </div>
+                <div class="text-center px-4">
+                    <div class="text-3xl md:text-4xl font-bold text-white mb-2">AI</div>
+                    <div class="text-sm text-gray-400 font-medium uppercase tracking-wider">Tahlil</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How it works -->
+        <section id="how-it-works" class="py-24 max-w-6xl mx-auto px-6 w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Qanday ishlaydi?</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">Vaqtni yo'qotmang. Tizim avtomatik ravishda eng muhim ishlarni bajaradi.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Step 1 -->
+                <div class="glass-card p-8 rounded-3xl relative overflow-hidden group hover:-translate-y-2 transition-transform duration-300">
+                    <div class="w-14 h-14 bg-red-500/20 text-red-400 rounded-2xl flex items-center justify-center text-2xl mb-6">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">1. Avto-joylashuv</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">SOS tugmasini bosganingizda tizim sizning aniq GPS koordinatalaringizni aniqlaydi va dispetcherga yuboradi.</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="glass-card p-8 rounded-3xl relative overflow-hidden group hover:-translate-y-2 transition-transform duration-300">
+                    <div class="w-14 h-14 bg-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center text-2xl mb-6">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">2. AI Tahlil</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Agar ovozli xabar qoldirsangiz, AI uni tahlil qilib, xavf darajasini belgilaydi va qanday brigada kerakligini maslahat beradi.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="glass-card p-8 rounded-3xl relative overflow-hidden group hover:-translate-y-2 transition-transform duration-300">
+                    <div class="w-14 h-14 bg-green-500/20 text-green-400 rounded-2xl flex items-center justify-center text-2xl mb-6">
+                        <i class="fa-solid fa-truck-fast"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">3. Tezkor Brigada</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Eng yaqin bo'sh brigada avtomatik tayinlanadi. Siz ularning harakatini xaritada jonli kuzatib borasiz.</p>
+                </div>
+            </div>
+        </section>
+        
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 border-t border-white/10 bg-black/40 pt-12 pb-6 mt-auto">
+        <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-8 mb-8">
+            <div>
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-truck-medical text-primary"></i>
+                    <h4 class="font-bold text-white">{{ app_name }}</h4>
+                </div>
+                <p class="text-gray-500 text-sm max-w-sm">O'zbekiston hududida innovatsion favqulodda tibbiy yordam chaqirish tizimi.</p>
+            </div>
+            <div class="flex gap-4 md:justify-end items-center">
+                <a href="#" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 hover:text-white transition-colors"><i class="fa-brands fa-telegram"></i></a>
+                <a href="#" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 hover:text-white transition-colors"><i class="fa-brands fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="text-center text-gray-600 text-xs border-t border-white/5 pt-6">
+            &copy; 2026 {{ app_name }}. Barcha huquqlar himoyalangan.
+        </div>
+    </footer>
+
+    <!-- Location Modal -->
+    <div id="locationModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div class="glass-card p-8 rounded-3xl max-w-md w-full mx-4 transform scale-95 transition-transform duration-300" id="locationModalContent">
+            <div class="w-20 h-20 bg-blue-500/10 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                <div class="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-20"></div>
+                <i class="fa-solid fa-location-dot text-3xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-center mb-3">Joylashuv kerak</h3>
+            <p class="text-gray-400 text-center mb-8 text-sm">Tez yordam yuborish uchun sizning joylashuvingizni aniqlashimiz zarur. Iltimos, ruxsat bering.</p>
+            <button id="allowLocationBtn" class="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-bold shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all transform hover:scale-105 active:scale-95">
+                Ruxsat berish
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Setup Auth UI dynamically
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('access_token');
+            const authContainer = document.getElementById('authContainer');
+            
+            if (token) {
+                // Determine role roughly by checking the token (in real app, decode JWT)
+                // For now just show "Profil" and "Chiqish"
+                authContainer.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <a href="/profile" class="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all duration-300 font-medium text-sm">
+                            <i class="fa-solid fa-user-circle"></i>
+                            <span class="hidden sm:inline">Profil</span>
+                        </a>
+                        <button onclick="logout()" class="w-10 h-10 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 flex items-center justify-center transition-colors" title="Chiqish">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </button>
+                    </div>
+                `;
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            window.location.reload();
+        }
+    </script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

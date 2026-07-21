@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chaqiruvlar tarixi - {{ app_name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { primary: '#EF4444', dark: '#0F172A' } } }
+        }
+    </script>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-dark text-white font-['Inter'] min-h-screen">
+    
+    <!-- Header -->
+    <header class="border-b border-white/10 glass-nav px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        <div class="flex items-center gap-4">
+            <a href="/profile" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <h1 class="text-xl font-bold">Chaqiruvlar tarixi</h1>
+        </div>
+        <div class="text-sm text-gray-400">Jami: <span id="totalCount" class="text-white font-bold">0</span></div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-6 mt-4">
+        
+        <div class="glass-card rounded-3xl border border-white/10 overflow-hidden">
+            <!-- Loading State -->
+            <div id="loading" class="text-center py-12 text-gray-400">
+                <i class="fa-solid fa-spinner fa-spin text-3xl mb-4 text-blue-500"></i>
+                <p>Yuklanmoqda...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden text-center py-16">
+                <div class="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
+                    <i class="fa-solid fa-clock-rotate-left text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-300 mb-2">Tarix bo'sh</h3>
+                <p class="text-gray-500 text-sm max-w-sm mx-auto">Hali hech qanday favqulodda yordam chaqirilmagan.</p>
+            </div>
+
+            <!-- List -->
+            <div id="historyList" class="hidden divide-y divide-white/5">
+                <!-- Dynamically populated -->
+            </div>
+            
+            <!-- Pagination -->
+            <div id="pagination" class="hidden border-t border-white/5 p-4 flex justify-between items-center bg-black/20">
+                <button id="prevBtn" class="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Oldingi</button>
+                <span class="text-sm text-gray-400">Sahifa <span id="currentPage">1</span></span>
+                <button id="nextBtn" class="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Keyingi</button>
+            </div>
+        </div>
+
+    </main>
+
+    <template id="historyRowTemplate">
+        <div class="p-5 hover:bg-white/5 transition-colors flex items-center justify-between cursor-pointer group">
+            <div class="flex items-center gap-5">
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 status-icon-bg">
+                    <i class="fa-solid fa-stethoscope status-icon"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-1 row-date">Sana</h4>
+                    <div class="flex items-center gap-3 text-xs text-gray-400">
+                        <span class="status-badge px-2 py-0.5 text-[10px] uppercase">STATUS</span>
+                        <span class="row-time"><i class="fa-regular fa-clock mr-1"></i> Vaqt</span>
+                        <span class="row-vehicle hidden"><i class="fa-solid fa-truck-medical mr-1"></i> <span class="vehicle-num"></span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-right">
+                <span class="risk-badge px-2.5 py-1 rounded-md text-[10px] font-bold border hidden tracking-wider">RISK</span>
+                <a href="#" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors ml-auto mt-2 view-link">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+    </template>
+
+    <script src="/static/js/history.js"></script>
+</body>
+</html>

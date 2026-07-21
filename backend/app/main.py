@@ -30,10 +30,18 @@ logging.basicConfig(
 logger = logging.getLogger("tez_yordam")
 
 # ── Yo'llar ──────────────────────────────────────────────────────
-BASE_DIR = Path(__file__).resolve().parent.parent  # → /app
-FRONTEND_DIR = BASE_DIR / "frontend"
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Dynamically locate frontend directory
+possible_frontend_dirs = [
+    BASE_DIR.parent / "frontend",
+    BASE_DIR / "frontend",
+    Path("/app/frontend"),
+]
+
+FRONTEND_DIR = next((d for d in possible_frontend_dirs if d.exists()), BASE_DIR / "frontend")
 TEMPLATES_DIR = FRONTEND_DIR / "templates"
-STATIC_DIR = Path("/app/frontend/static")   # <-- bu qatorda aniq yo‘l
+STATIC_DIR = FRONTEND_DIR / "static" if (FRONTEND_DIR / "static").exists() else Path("/app/frontend/static")
 
 # ── Lifespan (startup / shutdown) ────────────────────────────────
 @asynccontextmanager
