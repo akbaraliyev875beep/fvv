@@ -188,6 +188,56 @@ async def upload_audio(
     }
 
 
+@router.get("/stats", response_model=EmergencyStatsResponse)
+async def get_emergency_stats(
+    current_user: DispatcherUser,
+    db: DbSession,
+):
+    """Tizim statistikasi (Admin/Dispatcher)."""
+    from datetime import datetime, timezone, timedelta
+    from app.models.brigade import Brigade, BrigadeStatus
+    
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Bugungi chaqiruvlar
+    calls_today_res = await db.execute(
+        select(func.count(EmergencyCall.id)).where(EmergencyCall.created_at >= today_start)
+    )
+    total_calls_today = calls_today_res.scalar() or 0
+    
+    # Faol chaqiruvlar
+    active_res = await db.execute(
+        select(func.count(EmergencyCall.id)).where(
+            EmergencyCall.status.in_([CallStatus.PENDING, CallStatus.ASSIGNED, CallStatus.EN_ROUTE, CallStatus.ARRIVED])
+        )
+    )
+    active_calls = active_res.scalar() or 0
+    
+    # Bo'sh brigadalar
+    brigades_res = await db.execute(
+        select(func.count(Brigade.id)).where(Brigade.status == BrigadeStatus.AVAILABLE)
+    )
+    available_brigades = brigades_res.scalar() or 0
+    
+    # O'rtacha javob vaqti (pending -> assigned) bugun uchun
+    avg_res = await db.execute(
+        select(func.avg(func.extract('epoch', EmergencyCall.assigned_at - EmergencyCall.created_at)))
+        .where(
+            EmergencyCall.created_at >= today_start,
+            EmergencyCall.assigned_at.isnot(None)
+        )
+    )
+    avg_seconds = avg_res.scalar() or 0
+    avg_minutes = round(avg_seconds / 60.0, 1) if avg_seconds > 0 else 0
+    
+    return EmergencyStatsResponse(
+        total_calls_today=total_calls_today,
+        active_calls=active_calls,
+        available_brigades=available_brigades,
+        average_response_time_mins=avg_minutes,
+    )
+
+
 @router.get("/{call_id}", response_model=EmergencyCallRead)
 async def get_emergency_call(
     call_id: uuid.UUID,
@@ -388,54 +438,6 @@ async def get_call_history(
     )
 
 
-@router.get("/stats", response_model=EmergencyStatsResponse)
-async def get_emergency_stats(
-    current_user: DispatcherUser,
-    db: DbSession,
-):
-    """Tizim statistikasi (Admin/Dispatcher)."""
-    from datetime import datetime, timezone, timedelta
-    from app.models.brigade import Brigade, BrigadeStatus
-    
-    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    # Bugungi chaqiruvlar
-    calls_today_res = await db.execute(
-        select(func.count(EmergencyCall.id)).where(EmergencyCall.created_at >= today_start)
-    )
-    total_calls_today = calls_today_res.scalar() or 0
-    
-    # Faol chaqiruvlar
-    active_res = await db.execute(
-        select(func.count(EmergencyCall.id)).where(
-            EmergencyCall.status.in_([CallStatus.PENDING, CallStatus.ASSIGNED, CallStatus.EN_ROUTE, CallStatus.ARRIVED])
-        )
-    )
-    active_calls = active_res.scalar() or 0
-    
-    # Bo'sh brigadalar
-    brigades_res = await db.execute(
-        select(func.count(Brigade.id)).where(Brigade.status == BrigadeStatus.AVAILABLE)
-    )
-    available_brigades = brigades_res.scalar() or 0
-    
-    # O'rtacha javob vaqti (pending -> assigned) bugun uchun
-    avg_res = await db.execute(
-        select(func.avg(func.extract('epoch', EmergencyCall.assigned_at - EmergencyCall.created_at)))
-        .where(
-            EmergencyCall.created_at >= today_start,
-            EmergencyCall.assigned_at.isnot(None)
-        )
-    )
-    avg_seconds = avg_res.scalar() or 0
-    avg_minutes = round(avg_seconds / 60.0, 1) if avg_seconds > 0 else 0
-    
-    return EmergencyStatsResponse(
-        total_calls_today=total_calls_today,
-        active_calls=active_calls,
-        available_brigades=available_brigades,
-        average_response_time_mins=avg_minutes,
-    )
 
 
 @router.delete("/{call_id}/cancel")

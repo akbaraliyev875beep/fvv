@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Force cache buster for latest frontend templates update
-ARG BUILD_ID=20260721_v3
+ARG BUILD_ID=20260721_v4
 ENV BUILD_ID=${BUILD_ID}
 
 # Backend kodini nusxalash

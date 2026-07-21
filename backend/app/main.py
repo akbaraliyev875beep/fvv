@@ -34,9 +34,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Dynamically locate frontend directory
 possible_frontend_dirs = [
-    BASE_DIR.parent / "frontend",
-    BASE_DIR / "frontend",
     Path("/app/frontend"),
+    BASE_DIR / "frontend",
+    BASE_DIR.parent / "frontend",
 ]
 
 FRONTEND_DIR = next((d for d in possible_frontend_dirs if d.exists()), BASE_DIR / "frontend")
@@ -55,6 +55,7 @@ async def lifespan(app: FastAPI):
 
     # Dastlabki mock ma'lumotlar yaratish
     async with async_session_factory() as db:
+        # pyrefly: ignore [missing-import]
         from sqlalchemy import select
         from app.models.user import User, UserRole, Patient
         from app.core.security import encrypt_value
